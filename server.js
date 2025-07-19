@@ -61,7 +61,7 @@ app.get("/", (req, res) => {
 // ✅ Upload Route (Secured)
 app.post("/upload", authenticate, upload.single("file"), async (req, res) => {
   try {
-    if (!req.file) return res.status(400).send("No file uploaded.");
+    if (!req.file) return res.status(400).json({ error: "No file uploaded." });
 
     const result = await cloudinary.uploader.upload(req.file.path, {
       resource_type: "raw",
@@ -70,7 +70,7 @@ app.post("/upload", authenticate, upload.single("file"), async (req, res) => {
     fs.unlinkSync(req.file.path);
     res.json({ url: result.secure_url, public_id: result.public_id });
   } catch (err) {
-    res.status(500).send(err.message);
+    res.status(500).json({ error: err.message });
   }
 });
 
