@@ -2,7 +2,6 @@ require("dotenv").config();
 const express = require("express");
 const multer = require("multer");
 const cloudinary = require("cloudinary").v2;
-const fs = require("fs");
 const cors = require("cors");
 const rateLimit = require("express-rate-limit");
 
@@ -12,8 +11,8 @@ app.use(express.json());
 
 // ✅ Rate Limiting
 const limiter = rateLimit({
-  windowMs: 1 * 60 * 1000, // 1 minute
-  max: 10, // limit each IP to 10 requests per minute
+  windowMs: 1 * 60 * 1000,
+  max: 10,
 });
 app.use(limiter);
 
@@ -24,24 +23,18 @@ cloudinary.config({
   api_secret: process.env.CLOUDINARY_API_SECRET,
 });
 
-// ✅ Multer Setup (Restrict to PDF, limit file size)
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => cb(null, "uploads/"),
-  filename: (req, file, cb) => cb(null, Date.now() + "-" + file.originalname),
-});
-
+// ✅ Multer Setup (Memory Storage)
+const storage = multer.memoryStorage();
 const fileFilter = (req, file, cb) => {
-  const allowedTypes = ["application/pdf"];
-  if (!allowedTypes.includes(file.mimetype)) {
+  if (file.mimetype !== "application/pdf") {
     return cb(new Error("Only PDF files are allowed."));
   }
   cb(null, true);
 };
-
 const upload = multer({
   storage,
   fileFilter,
-  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB max
+  limits: { fileSize: 5 * 1024 * 1024 },
 });
 
 // ✅ Simple Token-Based Authentication
@@ -58,23 +51,19 @@ app.get("/", (req, res) => {
   res.send("Secure file upload service is running.");
 });
 
-// ✅ Upload Route (Secured)
-app.post("/upload", authenticate, upload.single("file"), async (req, res) => {
-  try {
-    if (!req.file) return res.status(400).json({ error: "No file uploaded." });
+// ✅ Upload Route (Memory Buffer -> Cloudinary)
+app.post("/upload", authenticate, upload.single("file"), (req, res) => {
+  if (!req.file) return res.status(400).send("No file uploaded.");
 
-    const result = await cloudinary.uploader.upload(req.file.path, {
-      resource_type: "raw",
-    });
-
-    fs.unlinkSync(req.file.path);
-    res.json({ url: result.secure_url, public_id: result.public_id });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
+  cloudinary.uploader
+    .upload_stream({ resource_type: "raw" }, (error, result) => {
+      if (error) return res.status(500).send(error.message);
+      res.json({ url: result.secure_url, public_id: result.public_id });
+    })
+    .end(req.file.buffer);
 });
 
-// ✅ Delete Route (Secured)
+// ✅ Delete Route
 app.delete("/delete", authenticate, async (req, res) => {
   const publicId = req.body.public_id;
   if (!publicId) return res.status(400).send("Missing public_id.");
@@ -89,6 +78,5 @@ app.delete("/delete", authenticate, async (req, res) => {
   }
 });
 
-app.listen(8080, () =>
-  console.log("🚀 Secure Server running on http://localhost:8080")
-);
+// ✅ Start Server
+app.listen(8080, () => console.log("🚀 Secure Server running on http://localhost:8080"));
