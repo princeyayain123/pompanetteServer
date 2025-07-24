@@ -46,6 +46,10 @@ app.get("/", (req, res) => {
   res.send("Secure file upload service is running.");
 });
 
+app.get("/", (req, res) => {
+  res.send("Server is Running");
+});
+
 app.post("/upload", authenticate, upload.single("file"), (req, res) => {
   if (!req.file) return res.status(400).send("No file uploaded.");
 
