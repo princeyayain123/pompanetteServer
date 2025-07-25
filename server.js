@@ -46,7 +46,7 @@ app.get("/", (req, res) => {
   res.send("Secure file upload service is running.");
 });
 
-app.get("/", (req, res) => {
+app.get("/ping", (req, res) => {
   res.send("Server is Running");
 });
 
