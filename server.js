@@ -4,9 +4,12 @@ const multer = require("multer");
 const cloudinary = require("cloudinary").v2;
 const cors = require("cors");
 const rateLimit = require("express-rate-limit");
+const helmet = require("helmet");
 
 const app = express();
+
 app.use(cors());
+app.use(helmet());
 app.use(express.json());
 
 const limiter = rateLimit({
@@ -37,7 +40,7 @@ const upload = multer({
 const authenticate = (req, res, next) => {
   const authHeader = req.headers.authorization;
   if (!authHeader || authHeader !== `Bearer ${process.env.UPLOAD_TOKEN}`) {
-    return res.status(403).send("Unauthorized.");
+    return res.status(403).json({ error: "Unauthorized access" }); // ← clear JSON response
   }
   next();
 };
