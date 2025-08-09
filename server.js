@@ -5,10 +5,15 @@ const cloudinary = require("cloudinary").v2;
 const cors = require("cors");
 const rateLimit = require("express-rate-limit");
 const helmet = require("helmet");
+const session = require("express-session");
 
 const app = express();
 
-app.use(cors());
+// --- Security Middleware ---
+app.use(cors({
+  origin: process.env.FRONTEND_URL,
+  credentials: true, // allow cookies
+}));
 app.use(helmet());
 app.use(express.json());
 
@@ -18,12 +23,26 @@ const limiter = rateLimit({
 });
 app.use(limiter);
 
+app.use(session({
+  secret: process.env.SESSION_SECRET || "changeme",
+  resave: false,
+  saveUninitialized: false,
+  cookie: {
+    httpOnly: true, // cannot be read by JS
+    secure: process.env.NODE_ENV === "production", // true if HTTPS
+    sameSite: "lax",
+    maxAge: 5 * 60 * 1000, // 5 minutes upload window
+  },
+}));
+
+// --- Cloudinary Config ---
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
   api_key: process.env.CLOUDINARY_API_KEY,
   api_secret: process.env.CLOUDINARY_API_SECRET,
 });
 
+// --- Multer Config ---
 const storage = multer.memoryStorage();
 const fileFilter = (req, file, cb) => {
   if (file.mimetype !== "application/pdf") {
@@ -37,14 +56,7 @@ const upload = multer({
   limits: { fileSize: 5 * 1024 * 1024 },
 });
 
-const authenticate = (req, res, next) => {
-  const authHeader = req.headers.authorization;
-  if (!authHeader || authHeader !== `Bearer ${process.env.UPLOAD_TOKEN}`) {
-    return res.status(403).json({ error: "Unauthorized access" }); // ← clear JSON response
-  }
-  next();
-};
-
+// --- Routes ---
 app.get("/", (req, res) => {
   res.send("Secure file upload service is running.");
 });
@@ -53,7 +65,21 @@ app.get("/ping", (req, res) => {
   res.send("Server is Running");
 });
 
-app.post("/upload", authenticate, upload.single("file"), (req, res) => {
+// Step 1: Start session for uploading
+app.post("/start-upload-session", (req, res) => {
+  req.session.canUpload = true;
+  res.json({ message: "Upload session started." });
+});
+
+// Step 2: Upload route — checks session, not token
+const checkUploadPermission = (req, res, next) => {
+  if (!req.session.canUpload) {
+    return res.status(403).json({ error: "Unauthorized access" });
+  }
+  next();
+};
+
+app.post("/upload", checkUploadPermission, upload.single("file"), (req, res) => {
   if (!req.file) return res.status(400).send("No file uploaded.");
 
   cloudinary.uploader
@@ -64,7 +90,7 @@ app.post("/upload", authenticate, upload.single("file"), (req, res) => {
     .end(req.file.buffer);
 });
 
-app.delete("/delete", authenticate, async (req, res) => {
+app.delete("/delete", checkUploadPermission, async (req, res) => {
   const publicId = req.body.public_id;
   if (!publicId) return res.status(400).send("Missing public_id.");
 
