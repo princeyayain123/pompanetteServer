@@ -9,13 +9,13 @@ const session = require("express-session");
 
 const app = express();
 
-// --- Security Middleware ---
 app.use(
   cors({
     origin: process.env.FRONTEND_URL,
-    credentials: true, // allow cookies
+    credentials: true, 
   })
 );
+
 app.use(helmet());
 app.use(express.json());
 
