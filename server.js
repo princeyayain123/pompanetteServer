@@ -10,10 +10,12 @@ const session = require("express-session");
 const app = express();
 
 // --- Security Middleware ---
-app.use(cors({
-  origin: process.env.FRONTEND_URL,
-  credentials: true, // allow cookies
-}));
+app.use(
+  cors({
+    origin: process.env.FRONTEND_URL,
+    credentials: true, // allow cookies
+  })
+);
 app.use(helmet());
 app.use(express.json());
 
@@ -23,17 +25,19 @@ const limiter = rateLimit({
 });
 app.use(limiter);
 
-app.use(session({
-  secret: process.env.SESSION_SECRET || "changeme",
-  resave: false,
-  saveUninitialized: false,
-  cookie: {
-    httpOnly: true, // cannot be read by JS
-    secure: process.env.NODE_ENV === "production", // true if HTTPS
-    sameSite: "lax",
-    maxAge: 5 * 60 * 1000, // 5 minutes upload window
-  },
-}));
+app.use(
+  session({
+    secret: process.env.SESSION_SECRET || "changeme",
+    resave: false,
+    saveUninitialized: false,
+    cookie: {
+      httpOnly: true,
+      secure: true,
+      sameSite: "none",
+      maxAge: 5 * 60 * 1000,
+    },
+  })
+);
 
 // --- Cloudinary Config ---
 cloudinary.config({
