@@ -32,12 +32,13 @@ app.use(
     saveUninitialized: false,
     cookie: {
       httpOnly: true,
-      secure: true,
-      sameSite: "none",
+      secure: false,  // change here for local dev
+      sameSite: "lax", // or "strict" or "lax" for local dev
       maxAge: 5 * 60 * 1000,
     },
   })
 );
+
 
 // --- Cloudinary Config ---
 cloudinary.config({
