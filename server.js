@@ -12,7 +12,7 @@ const app = express();
 app.use(
   cors({
     origin: process.env.FRONTEND_URL,
-    credentials: true, 
+    credentials: true,
   })
 );
 
@@ -32,7 +32,7 @@ app.use(
     saveUninitialized: false,
     cookie: {
       httpOnly: true,
-      secure: true,
+      secure: process.env.NODE_ENV === "production", // only secure in prod HTTPS
       sameSite: "none",
       maxAge: 5 * 60 * 1000,
     },
