@@ -74,9 +74,13 @@ app.get("/ping", (req, res) => {
 
 // Step 1: Start session for uploading
 app.post("/start-upload-session", (req, res) => {
-  const token = jwt.sign({ canUpload: true }, process.env.JWT_SECRET, { expiresIn: "5m" });
-  console.log("Generated JWT token:", token);
-  res.json({ token });
+  try {
+    const token = jwt.sign({ canUpload: true }, process.env.JWT_SECRET, { expiresIn: "5m" });
+    res.json({ token });
+  } catch (error) {
+    console.error("JWT signing error:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
 });
 
 // Step 2: Upload route — checks session, not token
