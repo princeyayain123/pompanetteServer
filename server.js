@@ -19,7 +19,7 @@ app.use(
 app.use(helmet());
 app.use(express.json());
 
-app.set('trust proxy', 1);
+app.set("trust proxy", 1);
 
 const limiter = rateLimit({
   windowMs: 1 * 60 * 1000,
@@ -34,7 +34,7 @@ app.use(
     saveUninitialized: false,
     cookie: {
       httpOnly: true,
-      secure: true,
+      secure: process.env.NODE_ENV === "production", // Only true in production with HTTPS
       sameSite: "none",
       maxAge: 5 * 60 * 1000,
     },
