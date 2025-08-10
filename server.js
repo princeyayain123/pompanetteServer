@@ -6,6 +6,7 @@ const cors = require("cors");
 const rateLimit = require("express-rate-limit");
 const helmet = require("helmet");
 const session = require("express-session");
+const jwt = require("jsonwebtoken");
 
 const app = express();
 
@@ -73,17 +74,25 @@ app.get("/ping", (req, res) => {
 
 // Step 1: Start session for uploading
 app.post("/start-upload-session", (req, res) => {
-  req.session.canUpload = true;
-  console.log("Session started:", req.session);
-  res.json({ message: "Upload session started." });
+  const token = jwt.sign({ canUpload: true }, process.env.JWT_SECRET, { expiresIn: "5m" });
+  res.json({ token });
 });
 
 // Step 2: Upload route — checks session, not token
 const checkUploadPermission = (req, res, next) => {
-  if (!req.session.canUpload) {
-    return res.status(403).json({ error: "Unauthorized access" });
+  const authHeader = req.headers.authorization;
+  if (!authHeader) return res.status(403).json({ error: "Unauthorized access" });
+
+  const token = authHeader.split(" ")[1];
+  if (!token) return res.status(403).json({ error: "Unauthorized access" });
+
+  try {
+    const payload = jwt.verify(token, process.env.JWT_SECRET);
+    if (!payload.canUpload) throw new Error("Invalid token");
+    next();
+  } catch {
+    res.status(403).json({ error: "Unauthorized access" });
   }
-  next();
 };
 
 app.post("/upload", checkUploadPermission, upload.single("file"), (req, res) => {
