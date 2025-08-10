@@ -11,7 +11,7 @@ const app = express();
 
 app.use(
   cors({
-    origin: process.env.FRONTEND_URL,
+    origin: "https://custom-boat-seat-configurator.vercel.app",
     credentials: true,
   })
 );
@@ -34,8 +34,8 @@ app.use(
     saveUninitialized: false,
     cookie: {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production", // Only true in production with HTTPS
-      sameSite: "none",
+      secure: true, // must be true since using HTTPS
+      sameSite: "none", // for cross-site cookies
       maxAge: 5 * 60 * 1000,
     },
   })
