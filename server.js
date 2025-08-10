@@ -34,7 +34,7 @@ app.use(
     saveUninitialized: false,
     cookie: {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production", // Only true in production with HTTPS
+      secure: false, // Disable secure to test on mobile HTTP
       sameSite: "none",
       maxAge: 5 * 60 * 1000,
     },
@@ -74,6 +74,7 @@ app.get("/ping", (req, res) => {
 // Step 1: Start session for uploading
 app.post("/start-upload-session", (req, res) => {
   req.session.canUpload = true;
+  console.log("Session started:", req.session);
   res.json({ message: "Upload session started." });
 });
 
