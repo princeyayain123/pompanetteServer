@@ -75,6 +75,7 @@ app.get("/ping", (req, res) => {
 // Step 1: Start session for uploading
 app.post("/start-upload-session", (req, res) => {
   const token = jwt.sign({ canUpload: true }, process.env.JWT_SECRET, { expiresIn: "5m" });
+  console.log("Generated JWT token:", token);
   res.json({ token });
 });
 
