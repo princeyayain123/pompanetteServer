@@ -12,7 +12,7 @@ const app = express();
 
 app.use(
   cors({
-    origin: "https://custom-boat-seat-configurator.vercel.app",
+    origin: "https://design.pompanette.com/",
     credentials: true,
   })
 );
