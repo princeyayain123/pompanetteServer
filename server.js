@@ -12,7 +12,7 @@ const app = express();
 
 app.use(
   cors({
-    origin: "https://design.pompanette.com/",
+    origin: "https://design.pompanette.com",
     credentials: true,
   })
 );
